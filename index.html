@@ -14,6 +14,9 @@
     #results { margin-top: 30px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; }
     .result-item { background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #3498db; }
     .result-link { display: block; color: #3498db; text-decoration: none; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+    
+    /* สไตล์สำหรับปุ่ม Dashboard */
+    #dashboardLink { margin-top: 20px; display: none; } /* ซ่อนไว้เป็นค่าเริ่มต้น */
   </style>
 </head>
 <body>
@@ -26,40 +29,50 @@
     <button class="btn-search" onclick="searchData()">ค้นหา</button>
   </div>
   
-  <div style="margin-top: 20px;">
-    <a href="dashboard.html" style="color: #7f8c8d; text-decoration: underline;">📊 ไปหน้า Dashboard ภาพรวม</a>
+  <div id="dashboardLink">
+    <a href="dashboard.html" style="color: #2c3e50; font-weight: bold; text-decoration: underline;">📊 ไปหน้า Dashboard ภาพรวม</a>
   </div>
 
   <div id="results"></div>
 
   <script>
-    // 🔴🔴 นำ URL ของ Apps Script ที่ได้จากขั้นตอนที่ 1 มาใส่ในเครื่องหมายคำพูดด้านล่าง 🔴🔴
+    // 🔴🔴 นำ URL ของ Apps Script ที่ได้มาใหม่จากการ Deploy ล่าสุดมาใส่ 🔴🔴
     const API_URL = "https://script.google.com/macros/s/AKfycby8tXxc4LIX45swLsawZgGoQVca_rT-_YdLWqs_FRMfCeGfzfJaDWQItyIRhrZYoWs/exec";
 
     function clearInput() {
       document.getElementById('display').value = '';
       document.getElementById('results').innerHTML = '';
+      document.getElementById('dashboardLink').style.display = 'none'; // ซ่อนลิงก์เมื่อกดล้างข้อมูล
     }
 
     async function searchData() {
       const id = document.getElementById('display').value;
       const resultsDiv = document.getElementById('results');
+      const dashboardLink = document.getElementById('dashboardLink');
+      
       if (!id) return;
 
       resultsDiv.innerHTML = 'กำลังค้นหา...';
+      dashboardLink.style.display = 'none'; // ซ่อนลิงก์ไว้ก่อนทุกครั้งที่เริ่มค้นหาใหม่
 
       try {
-        // ใช้ fetch API เรียกข้อมูลผ่าน HTTP GET พร้อมส่งพารามิเตอร์ action และ id
         const response = await fetch(`${API_URL}?action=search&id=${id}`);
-        const data = await response.json();
+        const data = await response.json(); // ตอนนี้ data จะมีโครงสร้าง { isAdmin: true/false, results: [...] }
         
         resultsDiv.innerHTML = '';
-        if (data.length === 0) {
+
+        // ถ้าสถานะเป็น Admin ให้แสดงลิงก์ Dashboard
+        if (data.isAdmin === true) {
+          dashboardLink.style.display = 'block';
+        }
+
+        // ตรวจสอบว่ามีผลลัพธ์การค้นหาหรือไม่
+        if (data.results.length === 0) {
           resultsDiv.innerHTML = '<div style="text-align:center">ไม่พบข้อมูลที่มีลิงก์</div>';
           return;
         }
         
-        data.forEach(item => {
+        data.results.forEach(item => {
           const div = document.createElement('div');
           div.className = 'result-item';
           div.innerHTML = `
