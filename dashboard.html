@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resident Dashboard</title>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; padding: 20px; background-color: #f4f7f6; color: #333; }
+    .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h2 { text-align: center; color: #2c3e50; }
+    .filter-section { text-align: center; margin-bottom: 20px; padding: 15px; background-color: #ecf0f1; border-radius: 8px; }
+    select { padding: 10px 15px; font-size: 16px; border-radius: 5px; border: 1px solid #bdc3c7; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background-color: #3498db; color: white; position: sticky; top: 0; }
+    a { color: #2980b9; text-decoration: none; font-weight: bold; }
+    .loading { text-align: center; padding: 40px 0; color: #7f8c8d; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>📊 Dashboard ผลงาน Resident</h2>
+    
+    <div style="text-align: center; margin-bottom: 20px;">
+      <a href="index.html" style="color: #7f8c8d; text-decoration: underline;">⬅️ กลับไปหน้าค้นหา</a>
+    </div>
+
+    <div class="filter-section">
+      <label>เลือกชั้นปี: </label>
+      <select id="yearSelect" onchange="filterData()"><option>กำลังโหลด...</option></select>
+    </div>
+
+    <div id="loading" class="loading">⏳ กำลังดึงข้อมูล...</div>
+    
+    <table id="dataTable" style="display:none;">
+      <thead><tr><th>Resident (ลิงก์)</th><th>Staff</th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    // 🔴🔴 นำ URL ของ Apps Script มาใส่ตรงนี้เช่นกัน 🔴🔴
+    const API_URL = "https://script.google.com/macros/s/AKfycby8tXxc4LIX45swLsawZgGoQVca_rT-_YdLWqs_FRMfCeGfzfJaDWQItyIRhrZYoWs/exec";
+    let allData = [];
+
+    window.onload = async function() {
+      try {
+        const response = await fetch(`${API_URL}?action=dashboard`);
+        const data = await response.json();
+        
+        allData = data.records;
+        const select = document.getElementById('yearSelect');
+        select.innerHTML = '<option value="all">ดูทุกชั้นปีรวมกัน</option>';
+        
+        data.years.forEach(year => {
+          select.innerHTML += `<option value="${year}">ชั้นปี ${year}</option>`;
+        });
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('dataTable').style.display = 'table';
+        filterData();
+      } catch (error) {
+        document.getElementById('loading').innerText = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+      }
+    };
+
+    function filterData() {
+      const selectedYear = document.getElementById('yearSelect').value;
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+
+      const filtered = selectedYear === 'all' ? allData : allData.filter(r => r.year === selectedYear);
+
+      if(filtered.length === 0) {
+         tbody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:red;">ไม่พบข้อมูล</td></tr>';
+         return;
+      }
+
+      filtered.forEach(row => {
+        let tr = `<tr>
+          <td>${row.link ? `<a href="${row.link}" target="_blank">🔗 ${row.resident}</a>` : row.resident}</td>
+          <td>${row.staff || '-'}</td>
+        </tr>`;
+        tbody.innerHTML += tr;
+      });
+    }
+  </script>
+</body>
+</html>
