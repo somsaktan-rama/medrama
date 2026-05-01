@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Resident Med Search</title>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; text-align: center; padding: 20px; background-color: #f4f7f6; }
+    #display { width: 80%; max-width: 300px; font-size: 24px; padding: 15px; margin-bottom: 20px; text-align: center; border: 2px solid #2c3e50; border-radius: 8px; outline: none; }
+    .action-btns { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
+    button { padding: 15px 30px; font-size: 18px; border: none; border-radius: 8px; color: white; cursor: pointer; touch-action: manipulation; }
+    .btn-search { background-color: #2ecc71; }
+    .btn-clear { background-color: #e74c3c; }
+    #results { margin-top: 30px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; }
+    .result-item { background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #3498db; }
+    .result-link { display: block; color: #3498db; text-decoration: none; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+
+  <h2>🔍 ค้นหาผลงาน Resident</h2>
+  <input type="text" id="display" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="ป้อน RamaID" autofocus>
+
+  <div class="action-btns">
+    <button class="btn-clear" onclick="clearInput()">ล้าง</button>
+    <button class="btn-search" onclick="searchData()">ค้นหา</button>
+  </div>
+  
+  <div style="margin-top: 20px;">
+    <a href="dashboard.html" style="color: #7f8c8d; text-decoration: underline;">📊 ไปหน้า Dashboard ภาพรวม</a>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    // 🔴🔴 นำ URL ของ Apps Script ที่ได้จากขั้นตอนที่ 1 มาใส่ในเครื่องหมายคำพูดด้านล่าง 🔴🔴
+    const API_URL = "https://script.google.com/macros/s/AKfycby8tXxc4LIX45swLsawZgGoQVca_rT-_YdLWqs_FRMfCeGfzfJaDWQItyIRhrZYoWs/exec";
+
+    function clearInput() {
+      document.getElementById('display').value = '';
+      document.getElementById('results').innerHTML = '';
+    }
+
+    async function searchData() {
+      const id = document.getElementById('display').value;
+      const resultsDiv = document.getElementById('results');
+      if (!id) return;
+
+      resultsDiv.innerHTML = 'กำลังค้นหา...';
+
+      try {
+        // ใช้ fetch API เรียกข้อมูลผ่าน HTTP GET พร้อมส่งพารามิเตอร์ action และ id
+        const response = await fetch(`${API_URL}?action=search&id=${id}`);
+        const data = await response.json();
+        
+        resultsDiv.innerHTML = '';
+        if (data.length === 0) {
+          resultsDiv.innerHTML = '<div style="text-align:center">ไม่พบข้อมูลที่มีลิงก์</div>';
+          return;
+        }
+        
+        data.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'result-item';
+          div.innerHTML = `
+            <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
+            <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
+          `;
+          resultsDiv.appendChild(div);
+        });
+      } catch (error) {
+        resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูล';
+        console.error(error);
+      }
+    }
+
+    const displayInput = document.getElementById('display');
+    displayInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
+    displayInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') searchData(); });
+  </script>
+</body>
+</html>
