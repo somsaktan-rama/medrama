@@ -29,10 +29,13 @@
 
   <div id="loading" class="loading-msg">⏳ กำลังเชื่อมต่อระบบบัญชี LINE...</div>
 
-  <div id="profileBox" class="profile-card">
+<div id="profileBox" class="profile-card">
     <img id="linePic" src="" alt="Profile">
     <div style="font-weight: bold; font-size: 18px;" id="lineName"></div>
     <div style="color: #2c3e50; font-size: 14px;" id="realName"></div>
+    
+    <div id="personalLinkDiv" style="display:none; margin-top: 15px; margin-bottom: 10px;"></div>
+
     <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
   </div>
 
@@ -83,7 +86,7 @@
 
       if (data.found) {
         // ส่ง ramaid เข้าไปด้วย
-        showApp(data.name, data.role, data.group, data.ramaid);
+        showApp(data.name, data.role, data.group, data.ramaid, data.personalLink); // เพิ่มพารามิเตอร์ที่ 5
       } else {
         document.getElementById('registerBox').style.display = 'block';
       }
@@ -101,7 +104,7 @@
       if (data.success) {
         document.getElementById('registerBox').style.display = 'none';
         // ส่ง ramaid ที่ได้กลับมาเข้าไปด้วย
-        showApp(data.name, data.role, data.group, data.ramaid);
+        showApp(data.name, data.role, data.group, data.ramaid, data.personalLink); // เพิ่มพารามิเตอร์ที่ 5
       } else {
         alert(data.message);
         location.reload();
@@ -109,7 +112,8 @@
     }
 
     // ฟังก์ชันโชว์โปรไฟล์ และเรียกดูข้อมูลส่วนตัวทันที
-    function showApp(realName, role, group, ramaid) {
+    // รับค่า personalLink เข้ามาด้วย
+    function showApp(realName, role, group, ramaid, personalLink) {
       document.getElementById('profileBox').style.display = 'block';
       document.getElementById('linePic').src = lineProfile.pictureUrl;
       document.getElementById('lineName').innerText = lineProfile.displayName;
@@ -117,13 +121,22 @@
       let groupText = group ? ` (กลุ่ม: ${group})` : '';
       document.getElementById('realName').innerText = realName + groupText;
 
+      // ---- สร้างปุ่มแฟ้มส่วนตัว ----
+      const linkDiv = document.getElementById('personalLinkDiv');
+      if (personalLink) {
+        linkDiv.innerHTML = `<a href="${personalLink}" target="_blank" style="background:#8e44ad; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">📁 เปิดแฟ้มประจำตัวนักเรียน</a>`;
+        linkDiv.style.display = 'block';
+      } else {
+        linkDiv.style.display = 'none';
+      }
+      // ----------------------------
+
       document.getElementById('main-app').style.display = 'block';
 
       if (role && role.toString().trim().toLowerCase() === 'admin') {
         document.getElementById('admin-section').style.display = 'block'; 
       }
       
-      // เรียกฟังก์ชันดึงข้อมูลผลงานของตัวเอง
       fetchMyData(ramaid);
     }
 
