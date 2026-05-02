@@ -33,7 +33,7 @@
     <img id="linePic" src="" alt="Profile">
     <div style="font-weight: bold; font-size: 18px;" id="lineName"></div>
     <div style="color: #2c3e50; font-size: 14px;" id="realName"></div>
-    <button class="btn-logout" onclick="logout()">Reload ระบบ</button>
+    <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
   </div>
 
   <div id="registerBox" class="register-section">
@@ -128,46 +128,90 @@
     }
 
     // ฟังก์ชันดึงข้อมูลจากชีต consult ตาม ramaid ของตัวเอง
-    async function fetchMyData(ramaid) {
-      const resultsDiv = document.getElementById('results');
-      
-      try {
-        const response = await fetch(`${API_URL}?action=search&id=${ramaid}`);
-        const data = await response.json();
-        
-        resultsDiv.innerHTML = '';
+async function fetchMyData(ramaid) {
+  const resultsDiv = document.getElementById('results');
+  
+  try {
+    const response = await fetch(`${API_URL}?action=search&id=${ramaid}`);
+    const data = await response.json(); // ข้อมูลจะเป็น { "ชีตที่1": [...], "ชีตที่2": [...] }
+    
+    resultsDiv.innerHTML = '';
 
-        if (data.length === 0) {
-          resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">ยังไม่มีผลงานในระบบ</div>';
-          return;
-        }
-        
-        data.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'result-item';
-          div.innerHTML = `
-            <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
-            <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
-          `;
-          resultsDiv.appendChild(div);
-        });
-      } catch (error) {
-        resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูล';
-      }
+    // ตรวจสอบว่ามีข้อมูลส่งกลับมาหรือไม่
+    if (Object.keys(data).length === 0) {
+      resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">ไม่พบข้อมูลของคุณในระบบ</div>';
+      return;
     }
+    
+    // วนลูปตามชื่อชีต
+    for (const sheetName in data) {
+      // สร้างหัวข้อชื่อชีต
+      const header = document.createElement('h4');
+      header.innerText = `📂 ${sheetName}`;
+      header.style.color = "#2c3e50";
+      header.style.marginTop = "20px";
+      resultsDiv.appendChild(header);
 
-// ฟังก์ชันออกจากระบบ
+      // สร้างรายการลิงก์ในชีตนั้นๆ
+      data[sheetName].forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.innerHTML = `
+          <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
+          <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
+        `;
+        resultsDiv.appendChild(div);
+      });
+    }
+  } catch (error) {
+    resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+  }
+}async function fetchMyData(ramaid) {
+  const resultsDiv = document.getElementById('results');
+  
+  try {
+    const response = await fetch(`${API_URL}?action=search&id=${ramaid}`);
+    const data = await response.json(); // ข้อมูลจะเป็น { "ชีตที่1": [...], "ชีตที่2": [...] }
+    
+    resultsDiv.innerHTML = '';
+
+    // ตรวจสอบว่ามีข้อมูลส่งกลับมาหรือไม่
+    if (Object.keys(data).length === 0) {
+      resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">ไม่พบข้อมูลของคุณในระบบ</div>';
+      return;
+    }
+    
+    // วนลูปตามชื่อชีต
+    for (const sheetName in data) {
+      // สร้างหัวข้อชื่อชีต
+      const header = document.createElement('h4');
+      header.innerText = `📂 ${sheetName}`;
+      header.style.color = "#2c3e50";
+      header.style.marginTop = "20px";
+      resultsDiv.appendChild(header);
+
+      // สร้างรายการลิงก์ในชีตนั้นๆ
+      data[sheetName].forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'result-item';
+        div.innerHTML = `
+          <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
+          <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
+        `;
+        resultsDiv.appendChild(div);
+      });
+    }
+  } catch (error) {
+    resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+  }
+}
+
+    // ฟังก์ชันออกจากระบบ
     function logout() {
       if (liff.isLoggedIn()) {
         liff.logout();
       }
-      
-      // ตรวจสอบว่าเปิดผ่านเบราว์เซอร์ในแอป LINE (มือถือ) หรือไม่
-      if (liff.isInClient()) {
-        liff.closeWindow(); // ปิดหน้าต่างแอปพลิเคชันกลับไปที่หน้าแชท LINE
-      } else {
-        location.reload(); // ถ้าเป็น PC หรือเบราว์เซอร์ภายนอก ให้รีเฟรชกลับไปหน้าล็อกอิน
-      }
+      location.reload(); // รีเฟรชหน้าเว็บเพื่อให้เด้งกลับไปหน้าล็อกอิน
     }
 
     const bindInput = document.getElementById('bindRamaId');
