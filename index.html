@@ -2,94 +2,114 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Resident Med Search</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Resident Med Profile</title>
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <style>
     body { font-family: 'Sarabun', sans-serif; text-align: center; padding: 20px; background-color: #f4f7f6; }
-    #display { width: 80%; max-width: 300px; font-size: 24px; padding: 15px; margin-bottom: 20px; text-align: center; border: 2px solid #2c3e50; border-radius: 8px; outline: none; }
-    .action-btns { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; }
-    button { padding: 15px 30px; font-size: 18px; border: none; border-radius: 8px; color: white; cursor: pointer; touch-action: manipulation; }
-    .btn-search { background-color: #2ecc71; }
-    .btn-clear { background-color: #e74c3c; }
-    #results { margin-top: 30px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; }
-    .result-item { background: white; padding: 15px; margin-bottom: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 5px solid #3498db; }
-    .result-link { display: block; color: #3498db; text-decoration: none; font-weight: bold; font-size: 18px; margin-bottom: 5px; }
-    
-    /* สไตล์สำหรับปุ่ม Dashboard */
-    #dashboardLink { margin-top: 20px; display: none; } /* ซ่อนไว้เป็นค่าเริ่มต้น */
+    .profile-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; }
+    .profile-card img { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px; }
+    .register-section { display: none; margin-bottom: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; }
+    input, button { padding: 10px; font-size: 16px; margin: 5px; border-radius: 5px; }
+    #main-app { display: none; } /* ซ่อนแอปหลักไว้จนกว่าจะ Login สำเร็จ */
+    .loading-msg { font-size: 18px; color: #7f8c8d; margin-top: 50px; }
   </style>
 </head>
 <body>
 
-  <h2>🔍 ค้นหาผลงาน Resident</h2>
-  <input type="text" id="display" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="ป้อน RamaID" autofocus>
+  <div id="loading" class="loading-msg">⏳ กำลังเชื่อมต่อระบบบัญชี LINE...</div>
 
-  <div class="action-btns">
-    <button class="btn-clear" onclick="clearInput()">ล้าง</button>
-    <button class="btn-search" onclick="searchData()">ค้นหา</button>
-  </div>
-  
-  <div id="dashboardLink">
-    <a href="dashboard.html" style="color: #2c3e50; font-weight: bold; text-decoration: underline;">📊 ไปหน้า Dashboard ภาพรวม</a>
+  <div id="profileBox" class="profile-card">
+    <img id="linePic" src="" alt="Profile">
+    <div style="font-weight: bold; font-size: 18px;" id="lineName"></div>
+    <div style="color: #27ae60; font-size: 14px;" id="realName"></div>
   </div>
 
-  <div id="results"></div>
+  <div id="registerBox" class="register-section">
+    <h3>ไม่พบบัญชีนี้ในระบบ</h3>
+    <p>กรุณาป้อน RamaID ของคุณเพื่อผูกบัญชี (ทำครั้งแรกครั้งเดียว)</p>
+    <input type="text" id="bindRamaId" placeholder="รหัสบุคคล" inputmode="numeric">
+    <button onclick="bindAccount()" style="background: #3498db; color: white; border: none;">ผูกบัญชี</button>
+  </div>
+
+  <div id="main-app">
+    <h2>🔍 ค้นหา profile Resident</h2>
+    <div id="dashboardLink" style="display:none; margin-top:15px;">
+      <a href="dashboard.html" style="color: #2c3e50; font-weight: bold;">📊 ไปหน้า Dashboard ภาพรวม</a>
+    </div>
+  </div>
 
   <script>
-    // 🔴🔴 นำ URL ของ Apps Script ที่ได้มาใหม่จากการ Deploy ล่าสุดมาใส่ 🔴🔴
     const API_URL = "https://script.google.com/macros/s/AKfycby8tXxc4LIX45swLsawZgGoQVca_rT-_YdLWqs_FRMfCeGfzfJaDWQItyIRhrZYoWs/exec";
+    const LIFF_ID = "2009954997-QO2Hj0Lv"; // 🔴 เอา LIFF ID จาก LINE Developers มาใส่
+    
+    let lineProfile = null;
 
-    function clearInput() {
-      document.getElementById('display').value = '';
-      document.getElementById('results').innerHTML = '';
-      document.getElementById('dashboardLink').style.display = 'none'; // ซ่อนลิงก์เมื่อกดล้างข้อมูล
-    }
-
-    async function searchData() {
-      const id = document.getElementById('display').value;
-      const resultsDiv = document.getElementById('results');
-      const dashboardLink = document.getElementById('dashboardLink');
-      
-      if (!id) return;
-
-      resultsDiv.innerHTML = 'กำลังค้นหา...';
-      dashboardLink.style.display = 'none'; // ซ่อนลิงก์ไว้ก่อนทุกครั้งที่เริ่มค้นหาใหม่
-
+    // 1. เริ่มต้นระบบ LINE Login
+    async function initLiff() {
       try {
-        const response = await fetch(`${API_URL}?action=search&id=${id}`);
-        const data = await response.json(); // ตอนนี้ data จะมีโครงสร้าง { isAdmin: true/false, results: [...] }
-        
-        resultsDiv.innerHTML = '';
-
-        // ถ้าสถานะเป็น Admin ให้แสดงลิงก์ Dashboard
-        if (data.isAdmin === true) {
-          dashboardLink.style.display = 'block';
+        await liff.init({ liffId: LIFF_ID });
+        if (!liff.isLoggedIn()) {
+          liff.login(); // บังคับ Login
+        } else {
+          lineProfile = await liff.getProfile();
+          checkUserInDatabase(lineProfile.userId);
         }
-
-        // ตรวจสอบว่ามีผลลัพธ์การค้นหาหรือไม่
-        if (data.results.length === 0) {
-          resultsDiv.innerHTML = '<div style="text-align:center">ไม่พบข้อมูลที่มีลิงก์</div>';
-          return;
-        }
-        
-        data.results.forEach(item => {
-          const div = document.createElement('div');
-          div.className = 'result-item';
-          div.innerHTML = `
-            <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
-            <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
-          `;
-          resultsDiv.appendChild(div);
-        });
-      } catch (error) {
-        resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูล';
-        console.error(error);
+      } catch (err) {
+        document.getElementById('loading').innerText = "เกิดข้อผิดพลาดกับระบบ LINE";
       }
     }
 
-    const displayInput = document.getElementById('display');
-    displayInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
-    displayInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') searchData(); });
+    // 2. เช็คว่า UID นี้มีใน Sheet Staff ไหม
+    async function checkUserInDatabase(uid) {
+      const response = await fetch(`${API_URL}?action=verifyLine&uid=${uid}`);
+      const data = await response.json();
+      
+      document.getElementById('loading').style.display = 'none';
+
+      if (data.found) {
+        showApp(data.name, data.role); // มีข้อมูลแล้ว ให้เข้าแอปได้เลย
+      } else {
+        document.getElementById('registerBox').style.display = 'block'; // ให้ผูกบัญชีก่อน
+      }
+    }
+
+    // 3. ฟังก์ชันผูกบัญชี
+    async function bindAccount() {
+      const ramaid = document.getElementById('bindRamaId').value;
+      if(!ramaid) return alert('กรุณาป้อน RamaID');
+
+      document.getElementById('registerBox').innerHTML = "กำลังผูกบัญชี...";
+      
+      const response = await fetch(`${API_URL}?action=registerLine&uid=${lineProfile.userId}&displayName=${lineProfile.displayName}&ramaid=${ramaid}`);
+      const data = await response.json();
+
+      if (data.success) {
+        document.getElementById('registerBox').style.display = 'none';
+        showApp(data.name, data.role);
+      } else {
+        alert(data.message);
+        location.reload();
+      }
+    }
+
+    // 4. แสดงหน้าจอแอปหลัก
+    function showApp(realName, role) {
+      document.getElementById('profileBox').style.display = 'block';
+      document.getElementById('linePic').src = lineProfile.pictureUrl;
+      document.getElementById('lineName').innerText = "LINE: " + lineProfile.displayName;
+      document.getElementById('realName').innerText = "ผู้ใช้งาน: " + realName;
+
+      document.getElementById('main-app').style.display = 'block';
+
+      // เช็ค Role เพื่อแสดงปุ่ม Dashboard
+      if (role && role.toLowerCase() === 'admin') {
+        document.getElementById('dashboardLink').style.display = 'block';
+      }
+    }
+
+    // เริ่มทำงานเมื่อเปิดหน้าเว็บ
+    window.onload = () => { initLiff(); };
   </script>
 </body>
 </html>
