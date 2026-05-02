@@ -68,7 +68,7 @@
       document.getElementById('loading').style.display = 'none';
 
       if (data.found) {
-        showApp(data.name, data.role); // มีข้อมูลแล้ว ให้เข้าแอปได้เลย
+        showApp(data.name, data.role, data.group); // มีข้อมูลแล้ว ให้เข้าแอปได้เลย
       } else {
         document.getElementById('registerBox').style.display = 'block'; // ให้ผูกบัญชีก่อน
       }
@@ -86,7 +86,7 @@
 
       if (data.success) {
         document.getElementById('registerBox').style.display = 'none';
-        showApp(data.name, data.role);
+        showApp(data.name, data.role, data.group);
       } else {
         alert(data.message);
         location.reload();
@@ -94,20 +94,24 @@
     }
 
     // 4. แสดงหน้าจอแอปหลัก
-    function showApp(realName, role) {
+    // (แก้ให้รับค่า group เข้ามาด้วย)
+    function showApp(realName, role, group) {
       document.getElementById('profileBox').style.display = 'block';
       document.getElementById('linePic').src = lineProfile.pictureUrl;
       document.getElementById('lineName').innerText = "LINE: " + lineProfile.displayName;
-      document.getElementById('realName').innerText = "ผู้ใช้งาน: " + realName;
+      
+      // แสดงชื่อจริง พร้อมระบุกลุ่ม (Group)
+      let groupText = group ? ` (กลุ่ม: ${group})` : '';
+      document.getElementById('realName').innerText = "ผู้ใช้งาน: " + realName + groupText;
 
       document.getElementById('main-app').style.display = 'block';
 
-      // เช็ค Role เพื่อแสดงปุ่ม Dashboard
+      // เช็ค Role คอลัมน์ D ว่าเป็น admin ไหม
       if (role && role.toLowerCase() === 'admin') {
         document.getElementById('dashboardLink').style.display = 'block';
       }
     }
-
+    
     // เริ่มทำงานเมื่อเปิดหน้าเว็บ
     window.onload = () => { initLiff(); };
   </script>
