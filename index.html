@@ -156,12 +156,18 @@
       }
     }
 
-    // ฟังก์ชันออกจากระบบ
+// ฟังก์ชันออกจากระบบ
     function logout() {
       if (liff.isLoggedIn()) {
         liff.logout();
       }
-      location.reload(); // รีเฟรชหน้าเว็บเพื่อให้เด้งกลับไปหน้าล็อกอิน
+      
+      // ตรวจสอบว่าเปิดผ่านเบราว์เซอร์ในแอป LINE (มือถือ) หรือไม่
+      if (liff.isInClient()) {
+        liff.closeWindow(); // ปิดหน้าต่างแอปพลิเคชันกลับไปที่หน้าแชท LINE
+      } else {
+        location.reload(); // ถ้าเป็น PC หรือเบราว์เซอร์ภายนอก ให้รีเฟรชกลับไปหน้าล็อกอิน
+      }
     }
 
     const bindInput = document.getElementById('bindRamaId');
