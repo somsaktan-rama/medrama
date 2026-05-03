@@ -123,8 +123,11 @@
 
       // ---- สร้างปุ่มแฟ้มส่วนตัว ----
       const linkDiv = document.getElementById('personalLinkDiv');
-      if (personalLink) {
-        linkDiv.innerHTML = `<a href="viewer.html?url=${encodeURIComponent(personalLink)}" target="_blank" style="background:#8e44ad; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">📁 เปิดแฟ้มประจำตัว (Read-only)</a>`;
+      
+      // เรามีตัวแปร lineProfile.userId เก็บ UID ไว้อยู่แล้วตั้งแต่ตอนล็อกอิน
+      if (lineProfile && lineProfile.userId) {
+        // สังเกตว่าเราส่งแค่ ?uid=Uxxxx... ไปที่หน้า viewer 
+        linkDiv.innerHTML = `<a href="viewer.html?uid=${lineProfile.userId}" target="_blank" style="background:#8e44ad; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">📁 เปิดแฟ้มประจำตัว (Read-only)</a>`;
         linkDiv.style.display = 'block';
       } else {
         linkDiv.style.display = 'none';
