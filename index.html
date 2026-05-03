@@ -116,7 +116,7 @@
       }
     }
 
-// ฟังก์ชันโชว์โปรไฟล์ และแยกการทำงานตาม Group / Role
+    // ฟังก์ชันโชว์โปรไฟล์ และแยกการทำงานตาม Group / Role
 function showApp(realName, role, group, ramaid, personalLink) {
       document.getElementById('profileBox').style.display = 'block';
       document.getElementById('linePic').src = lineProfile.pictureUrl;
@@ -130,7 +130,6 @@ function showApp(realName, role, group, ramaid, personalLink) {
 
       document.getElementById('main-app').style.display = 'block';
 
-      // แสดงปุ่ม Dashboard สำหรับ Admin
       if (isAdmin) {
         document.getElementById('dashboard-link').style.display = 'block';
       }
@@ -139,25 +138,38 @@ function showApp(realName, role, group, ramaid, personalLink) {
       const resultsDiv = document.getElementById('results');
 
       if (!isResident) {
-        // 👨‍🏫 กรณีเป็น Staff: ดึงรายชื่อนักเรียนที่ตนเองดูแล
-        resultTitle.innerText = "รายชื่อนักเรียนในความดูแลของคุณ (จาก Sheet Consult)";
+        // 👨‍🏫 กรณีเป็น Staff (หรืออื่นๆ ที่ไม่ใช่ Resident)
+        document.getElementById('personalLinkDiv').style.display = 'none';
+        resultTitle.innerText = "รายชื่อนักเรียนในความดูแลของคุณ";
         resultTitle.style.display = 'block';
-        fetchStaffStudents(ramaid); // ใช้ RamaID ของ Staff ในการค้นหา
+        fetchStaffStudents(ramaid); // วิ่งไปขอรายชื่อนักเรียน
       } else {
-        // 👨‍⚕️ กรณีเป็น Resident: ดึงแฟ้มส่วนตัวและปุ่มม่วง
-        showResidentSection(ramaid, personalLink);
+        // 👨‍⚕️ กรณีเป็น Resident
+        const linkDiv = document.getElementById('personalLinkDiv');
+        if (lineProfile && lineProfile.userId) {
+          linkDiv.innerHTML = `<a href="viewer.html?uid=${lineProfile.userId}" target="_blank" style="background:#8e44ad; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">📁 เปิดแฟ้มประจำตัว (Read-only)</a>`;
+          linkDiv.style.display = 'block';
+        }
+        resultTitle.innerText = "แฟ้มผลงานของคุณ";
+        resultTitle.style.display = 'block';
+        fetchMyData(ramaid); // วิ่งไปขอแฟ้มส่วนตัว
       }
     }
 
-    // ฟังก์ชันดึงรายชื่อนักเรียนสำหรับ Staff
     async function fetchStaffStudents(staffId) {
       const resultsDiv = document.getElementById('results');
-      resultsDiv.innerHTML = '<div style="text-align:center;">กำลังโหลดรายชื่อนักเรียน...</div>';
+      resultsDiv.innerHTML = '<div style="text-align:center; color:#7f8c8d;">กำลังโหลดรายชื่อนักเรียน...</div>';
 
       try {
         const response = await fetch(`${API_URL}?action=staffStudentList&staffId=${staffId}`);
         const data = await response.json();
         
+        // ถ้า Backend ตอบกลับมาเป็น Error (เช่น ลืม Deploy)
+        if (data.error) {
+          resultsDiv.innerHTML = `<div style="text-align:center; color:#e74c3c;">แจ้งเตือนระบบ: ${data.error}</div>`;
+          return;
+        }
+
         resultsDiv.innerHTML = '';
         if (data.length === 0) {
           resultsDiv.innerHTML = '<div style="text-align:center; color:#7f8c8d;">ไม่พบรายชื่อนักเรียนที่คุณดูแลในระบบ</div>';
@@ -174,9 +186,12 @@ function showApp(realName, role, group, ramaid, personalLink) {
           resultsDiv.appendChild(div);
         });
       } catch (e) {
-        resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการดึงข้อมูลรายชื่อ';
+        // จับ Error กรณี Network ล่ม หรือได้ผลลัพธ์ไม่ใช่ JSON
+        resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการ Deploy API</div>';
+        console.error("Fetch Error: ", e);
       }
     }
+    
     // ฟังก์ชันใหม่: ดึงรายชื่อนักเรียนมาทำเป็นปุ่มให้ Staff กด
     async function fetchStudentList() {
       const container = document.getElementById('student-list-container');
