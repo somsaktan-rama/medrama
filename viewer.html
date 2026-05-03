@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>แฟ้ม Resident 1.00</title>
+  <style>
+    body { font-family: 'Sarabun', sans-serif; padding: 20px; background-color: #f4f7f6; }
+    .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    h2 { color: #2c3e50; text-align: center; }
+    .sheet-tab { padding: 10px 15px; cursor: pointer; background: #eee; border: none; margin-right: 5px; border-radius: 5px 5px 0 0; }
+    .sheet-tab.active { background: #8e44ad; color: white; }
+    .table-container { overflow-x: auto; margin-top: 10px; border: 1px solid #ddd; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    .loading { text-align: center; padding: 50px; color: #7f8c8d; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 id="title">กำลังโหลดแฟ้มประจำตัว...</h2>
+    <div id="tabs"></div>
+    <div id="content" class="table-container"></div>
+  </div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxojSORCHYo_H-aUXDlD5l1g4FI8pl_-VsjiabTS508c2m4TG3Ziqx5zgPtR_yME_c/exec"; // ใส่ URL ของคุณ
+    const urlParams = new URLSearchParams(window.location.search);
+    const fileUrl = urlParams.get('url');
+
+    let allSheetsData = {};
+
+    window.onload = async () => {
+      if (!fileUrl) return document.getElementById('title').innerText = "ไม่พบไฟล์";
+      
+      try {
+        const res = await fetch(`${API_URL}?action=readStudentFile&fileUrl=${encodeURIComponent(fileUrl)}`);
+        allSheetsData = await res.json();
+        
+        if (allSheetsData.error) throw new Error(allSheetsData.error);
+        
+        renderTabs();
+      } catch (err) {
+        document.getElementById('title').innerText = "เกิดข้อผิดพลาด";
+        console.error(err);
+      }
+    };
+
+    function renderTabs() {
+      const tabsDiv = document.getElementById('tabs');
+      const sheetNames = Object.keys(allSheetsData);
+      
+      document.getElementById('title').innerText = "แฟ้มประจำตัว (Read-only)";
+      
+      sheetNames.forEach((name, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'sheet-tab' + (index === 0 ? ' active' : '');
+        btn.innerText = name;
+        btn.onclick = () => showSheet(name, btn);
+        tabsDiv.appendChild(btn);
+      });
+
+      if (sheetNames.length > 0) showSheet(sheetNames[0]);
+    }
+
+    function showSheet(name, btn) {
+      if (btn) {
+        document.querySelectorAll('.sheet-tab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+
+      const data = allSheetsData[name];
+      let html = '<table>';
+      data.forEach((row, rowIndex) => {
+        html += '<tr>';
+        row.forEach(cell => {
+          html += rowIndex === 0 ? `<th>${cell}</th>` : `<td>${cell}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</table>';
+      document.getElementById('content').innerHTML = html;
+    }
+  </script>
+</body>
+</html>
