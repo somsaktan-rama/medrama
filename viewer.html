@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>แฟ้ม Resident 1.00</title>
+  <title>แฟ้ม Resident 1.01</title>
   <style>
     body { font-family: 'Sarabun', sans-serif; padding: 20px; background-color: #f4f7f6; }
     .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -27,22 +27,23 @@
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxojSORCHYo_H-aUXDlD5l1g4FI8pl_-VsjiabTS508c2m4TG3Ziqx5zgPtR_yME_c/exec"; // ใส่ URL ของคุณ
     const urlParams = new URLSearchParams(window.location.search);
-    const fileUrl = urlParams.get('url');
+    const uid = urlParams.get('uid'); // รับค่า uid แทน url
 
     let allSheetsData = {};
 
     window.onload = async () => {
-      if (!fileUrl) return document.getElementById('title').innerText = "ไม่พบไฟล์";
+      if (!uid) return document.getElementById('title').innerText = "ข้อมูลไม่ถูกต้อง (No UID)";
       
       try {
-        const res = await fetch(`${API_URL}?action=readStudentFile&fileUrl=${encodeURIComponent(fileUrl)}`);
+        // ส่ง uid ไปบอก Apps Script ให้หาไฟล์ให้หน่อย
+        const res = await fetch(`${API_URL}?action=readStudentFile&uid=${uid}`);
         allSheetsData = await res.json();
         
         if (allSheetsData.error) throw new Error(allSheetsData.error);
         
         renderTabs();
       } catch (err) {
-        document.getElementById('title').innerText = "เกิดข้อผิดพลาด";
+        document.getElementById('title').innerText = err.message || "เกิดข้อผิดพลาดในการโหลดข้อมูล";
         console.error(err);
       }
     };
