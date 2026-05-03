@@ -125,37 +125,46 @@ function showApp(realName, role, group, ramaid, personalLink) {
       let groupText = group ? ` (กลุ่ม: ${group})` : '';
       document.getElementById('realName').innerText = realName + groupText;
 
-      const isResident = group && group.toString().trim().toLowerCase() === 'resident';
+      // 🔴 ปรับการเช็ค Resident ให้ครอบคลุม (เช่น Resident 1, resident med)
+      const groupStr = group ? group.toString().trim().toLowerCase() : '';
+      const isResident = groupStr.includes('resident'); 
       const isAdmin = role && role.toString().trim().toLowerCase() === 'admin';
 
       document.getElementById('main-app').style.display = 'block';
 
+      // โชว์ปุ่ม Dashboard เฉพาะ Admin
       if (isAdmin) {
         document.getElementById('dashboard-link').style.display = 'block';
       }
 
       const resultTitle = document.getElementById('result-title');
       const resultsDiv = document.getElementById('results');
+      const linkDiv = document.getElementById('personalLinkDiv');
 
-      if (!isResident) {
-        // 👨‍🏫 กรณีเป็น Staff (หรืออื่นๆ ที่ไม่ใช่ Resident)
-        document.getElementById('personalLinkDiv').style.display = 'none';
-        resultTitle.innerText = "รายชื่อนักเรียนในความดูแลของคุณ";
-        resultTitle.style.display = 'block';
-        fetchStaffStudents(ramaid); // วิ่งไปขอรายชื่อนักเรียน
-      } else {
-        // 👨‍⚕️ กรณีเป็น Resident
-        const linkDiv = document.getElementById('personalLinkDiv');
+      // แยกการทำงานให้ชัดเจน
+      if (isResident) {
+        // 👨‍⚕️ ส่วนของนักเรียน (Resident)
         if (lineProfile && lineProfile.userId) {
           linkDiv.innerHTML = `<a href="viewer.html?uid=${lineProfile.userId}" target="_blank" style="background:#8e44ad; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">📁 เปิดแฟ้มประจำตัว (Read-only)</a>`;
           linkDiv.style.display = 'block';
+        } else {
+          linkDiv.style.display = 'none';
         }
+        
         resultTitle.innerText = "แฟ้มผลงานของคุณ";
         resultTitle.style.display = 'block';
-        fetchMyData(ramaid); // วิ่งไปขอแฟ้มส่วนตัว
+        fetchMyData(ramaid); // ดึงรายการ 6 ชีตของตัวเอง
+
+      } else {
+        // 👨‍🏫 ส่วนของ Staff (ผู้ที่ไม่ใช่ Resident)
+        linkDiv.style.display = 'none'; // ซ่อนปุ่มแฟ้มส่วนตัว
+        
+        resultTitle.innerText = "รายชื่อนักเรียนในความดูแลของคุณ";
+        resultTitle.style.display = 'block';
+        fetchStaffStudents(ramaid); // ดึงรายชื่อจากชีต consult
       }
     }
-
+    
     async function fetchStaffStudents(staffId) {
       const resultsDiv = document.getElementById('results');
       resultsDiv.innerHTML = '<div style="text-align:center; color:#7f8c8d;">กำลังโหลดรายชื่อนักเรียน...</div>';
