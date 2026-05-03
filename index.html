@@ -47,13 +47,18 @@
     <button onclick="bindAccount()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 10px;">ลงทะเบียน</button>
   </div>
 
-  <div id="main-app">
+<div id="main-app">
     
-    <div id="admin-section" style="display:none; margin-bottom: 20px;">
+    <div id="dashboard-link" style="display:none; margin-bottom: 20px;">
       <a href="dashboard.html" style="background: #2c3e50; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">📊 ไปหน้า Dashboard ภาพรวม</a>
     </div>
 
-    <h3 id="result-title" style="color: #2c3e50; border-bottom: 2px solid #ddd; padding-bottom: 5px;">แฟ้มผลงานของคุณ</h3>
+    <div id="student-list-section" style="display:none; margin-bottom: 20px;">
+      <h3 style="color: #2c3e50; border-bottom: 2px solid #ddd; padding-bottom: 5px;">รายชื่อนักเรียนในระบบ</h3>
+      <div id="student-list-container">กำลังโหลดรายชื่อ...</div>
+    </div>
+
+    <h3 id="result-title" style="color: #2c3e50; border-bottom: 2px solid #ddd; padding-bottom: 5px; display: none;">แฟ้มผลงาน</h3>
     <div id="results">กำลังดึงข้อมูล...</div>
 
   </div>
@@ -111,8 +116,7 @@
       }
     }
 
-    // ฟังก์ชันโชว์โปรไฟล์ และเรียกดูข้อมูลส่วนตัวทันที
-    // รับค่า personalLink เข้ามาด้วย
+// ฟังก์ชันโชว์โปรไฟล์ และแยกการทำงานตาม Group / Role
     function showApp(realName, role, group, ramaid, personalLink) {
       document.getElementById('profileBox').style.display = 'block';
       document.getElementById('linePic').src = lineProfile.pictureUrl;
@@ -121,28 +125,81 @@
       let groupText = group ? ` (กลุ่ม: ${group})` : '';
       document.getElementById('realName').innerText = realName + groupText;
 
-      // ---- สร้างปุ่มแฟ้มส่วนตัว ----
+      const isResident = group && group.toString().trim().toLowerCase() === 'resident';
+      const isAdmin = role && role.toString().trim().toLowerCase() === 'admin';
+
+      // ---- 1. จัดการปุ่มแฟ้มส่วนตัวสีม่วง (เฉพาะ Resident) ----
       const linkDiv = document.getElementById('personalLinkDiv');
-      
-      // เรามีตัวแปร lineProfile.userId เก็บ UID ไว้อยู่แล้วตั้งแต่ตอนล็อกอิน
-      if (lineProfile && lineProfile.userId) {
-        // สังเกตว่าเราส่งแค่ ?uid=Uxxxx... ไปที่หน้า viewer 
+      if (lineProfile && lineProfile.userId && isResident) {
         linkDiv.innerHTML = `<a href="viewer.html?uid=${lineProfile.userId}" target="_blank" style="background:#8e44ad; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">📁 เปิดแฟ้มประจำตัว (Read-only)</a>`;
         linkDiv.style.display = 'block';
       } else {
         linkDiv.style.display = 'none';
       }
-      // ----------------------------
+      // ----------------------------------
 
       document.getElementById('main-app').style.display = 'block';
 
-      if (role && role.toString().trim().toLowerCase() === 'admin') {
-        document.getElementById('admin-section').style.display = 'block'; 
+      // ---- 2. Dashboard (เฉพาะ Admin) ----
+      if (isAdmin) {
+        document.getElementById('dashboard-link').style.display = 'block';
+      } else {
+        document.getElementById('dashboard-link').style.display = 'none';
       }
-      
-      fetchMyData(ramaid);
+
+      // ---- 3. จัดการแสดงผลรายชื่อ หรือ แฟ้ม ----
+      const resultTitle = document.getElementById('result-title');
+      const resultsDiv = document.getElementById('results');
+
+      if (!isResident) {
+        // ถ้าไม่ใช่ Resident (เช่น Staff) -> โชว์ลิสต์รายชื่อ
+        document.getElementById('student-list-section').style.display = 'block';
+        resultTitle.style.display = 'none';
+        resultsDiv.innerHTML = ''; 
+        fetchStudentList(); // ดึงปุ่มรายชื่อนักเรียน
+      } else {
+        // ถ้าเป็น Resident -> ดึงแฟ้มตัวเองทันที
+        document.getElementById('student-list-section').style.display = 'none';
+        resultTitle.innerText = "แฟ้มผลงานของคุณ";
+        resultTitle.style.display = 'block';
+        fetchMyData(ramaid);
+      }
     }
 
+    // ฟังก์ชันใหม่: ดึงรายชื่อนักเรียนมาทำเป็นปุ่มให้ Staff กด
+    async function fetchStudentList() {
+      const container = document.getElementById('student-list-container');
+      try {
+        const response = await fetch(`${API_URL}?action=listStudents`);
+        const data = await response.json();
+        
+        container.innerHTML = '';
+        if (data.length === 0) {
+          container.innerHTML = '<div style="color:#e74c3c;">ไม่พบรายชื่อนักเรียนในระบบ</div>';
+          return;
+        }
+
+        // สร้างปุ่มกดสำหรับนักเรียนแต่ละคน
+        data.forEach(student => {
+          const btn = document.createElement('button');
+          btn.style = "display: block; width: 100%; max-width: 300px; margin: 10px auto; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);";
+          btn.innerText = `👨‍⚕️ ${student.name} (${student.ramaid})`;
+          
+          // เมื่อกดปุ่มชื่อนักเรียน ให้ไปโหลดแฟ้มของนักเรียนคนนั้น
+          btn.onclick = () => {
+             document.getElementById('result-title').innerText = `แฟ้มผลงานของ: ${student.name}`;
+             document.getElementById('result-title').style.display = 'block';
+             document.getElementById('results').innerHTML = '<div style="text-align:center; color:#7f8c8d;">กำลังดึงข้อมูล...</div>';
+             fetchMyData(student.ramaid);
+          };
+          
+          container.appendChild(btn);
+        });
+      } catch (e) {
+        container.innerHTML = 'เกิดข้อผิดพลาดในการโหลดรายชื่อ';
+      }
+    }
+    
     // ฟังก์ชันดึงข้อมูลจากชีต consult ตาม ramaid ของตัวเอง
 async function fetchMyData(ramaid) {
   const resultsDiv = document.getElementById('results');
@@ -182,45 +239,8 @@ async function fetchMyData(ramaid) {
   } catch (error) {
     resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
   }
-}async function fetchMyData(ramaid) {
-  const resultsDiv = document.getElementById('results');
-  
-  try {
-    const response = await fetch(`${API_URL}?action=search&id=${ramaid}`);
-    const data = await response.json(); // ข้อมูลจะเป็น { "ชีตที่1": [...], "ชีตที่2": [...] }
-    
-    resultsDiv.innerHTML = '';
-
-    // ตรวจสอบว่ามีข้อมูลส่งกลับมาหรือไม่
-    if (Object.keys(data).length === 0) {
-      resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">ไม่พบข้อมูลของคุณในระบบ</div>';
-      return;
-    }
-    
-    // วนลูปตามชื่อชีต
-    for (const sheetName in data) {
-      // สร้างหัวข้อชื่อชีต
-      const header = document.createElement('h4');
-      header.innerText = `📂 ${sheetName}`;
-      header.style.color = "#2c3e50";
-      header.style.marginTop = "20px";
-      resultsDiv.appendChild(header);
-
-      // สร้างรายการลิงก์ในชีตนั้นๆ
-      data[sheetName].forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'result-item';
-        div.innerHTML = `
-          <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
-          <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
-        `;
-        resultsDiv.appendChild(div);
-      });
-    }
-  } catch (error) {
-    resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
-  }
 }
+    
 
     // ฟังก์ชันออกจากระบบ
     function logout() {
