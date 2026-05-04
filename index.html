@@ -40,8 +40,8 @@
   </div>
 
   <div id="registerBox" class="register-section">
-    <h3>ยืนยันตัวตนครั้งแรก</h3>
-    <p>กรุณาป้อน RamaID ของคุณเพื่อใช้งานระบบ</p>
+    <h3>ยืนยันตัวตนครั้งแรก (Med Profile)</h3>
+    <p>กรุณาป้อนรหัสบุคคล RamaID ของคุณเพื่อใช้งานระบบ</p>
     <input type="text" id="bindRamaId" placeholder="RamaID 6 หลัก" inputmode="numeric" pattern="[0-9]*">
     <br>
     <button onclick="bindAccount()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 10px;">ลงทะเบียน</button>
@@ -159,7 +159,7 @@ function showApp(realName, role, group, ramaid, personalLink) {
         // 👨‍🏫 ส่วนของ Staff (ผู้ที่ไม่ใช่ Resident)
         linkDiv.style.display = 'none'; // ซ่อนปุ่มแฟ้มส่วนตัว
         
-        resultTitle.innerText = "รายชื่อนักเรียนในความดูแลของคุณ";
+        resultTitle.innerText = "รายชื่อแพทย์ประจำบ้านในความดูแลของคุณ";
         resultTitle.style.display = 'block';
         fetchStaffStudents(ramaid); // ดึงรายชื่อจากชีต consult
       }
