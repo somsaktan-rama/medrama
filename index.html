@@ -122,7 +122,7 @@ function showApp(realName, role, group, ramaid, personalLink) {
       document.getElementById('linePic').src = lineProfile.pictureUrl;
       document.getElementById('lineName').innerText = lineProfile.displayName;
       
-      let groupText = group ? ` (กลุ่ม: ${group})` : '';
+      let groupText = group ? ` (หน่วย: ${group})` : '';
       document.getElementById('realName').innerText = realName + groupText;
 
       // 🔴 ปรับการเช็ค Resident ให้ครอบคลุม (เช่น Resident 1, resident med)
