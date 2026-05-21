@@ -3,19 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Resident Med Portal</title>
+  <title>Resident Med Portal 1.01</title>
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <style>
     body { font-family: 'Sarabun', sans-serif; text-align: center; padding: 20px; background-color: #f4f7f6; }
     .profile-card { background: white; padding: 15px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: none; border-top: 4px solid #2ecc71; }
     .profile-card img { width: 60px; height: 60px; border-radius: 50%; margin-bottom: 10px; }
-    .register-section { display: none; margin-bottom: 20px; padding: 15px; background: #fff3cd; border-radius: 8px; border: 1px solid #ffeeba; }
-    input { padding: 10px; font-size: 16px; margin: 5px; border-radius: 5px; width: 80%; max-width: 200px; text-align: center; }
+    
+    .register-section { display: none; margin-bottom: 20px; padding: 20px; background: #fff; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 350px; margin-left: auto; margin-right: auto; }
+    .register-section h3 { margin-top: 0; color: #2c3e50; }
+    
+    input { padding: 10px; font-size: 16px; margin-bottom: 10px; border-radius: 5px; width: 100%; box-sizing: border-box; border: 1px solid #ccc; }
     
     #main-app { display: none; }
     
     /* สไตล์ปุ่มออกจากระบบ */
-    .btn-logout { background-color: #e74c3c; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 8px; font-size: 16px; margin-top: 10px; }
+    .btn-logout { background-color: #e74c3c; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 8px; font-size: 16px; margin-top: 10px; width: 100%; max-width: 200px; }
     
     /* สไตล์ผลลัพธ์ */
     #results { margin-top: 20px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto; }
@@ -29,7 +33,7 @@
 
   <div id="loading" class="loading-msg">⏳ กำลังเชื่อมต่อระบบบัญชี LINE...</div>
 
-<div id="profileBox" class="profile-card">
+  <div id="profileBox" class="profile-card">
     <img id="linePic" src="" alt="Profile">
     <div style="font-weight: bold; font-size: 18px;" id="lineName"></div>
     <div style="color: #2c3e50; font-size: 14px;" id="realName"></div>
@@ -39,16 +43,27 @@
     <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
   </div>
 
-  <div id="registerBox" class="register-section">
-    <h3>ยืนยันตัวตนครั้งแรก (Med Profile)</h3>
-    <p>กรุณาป้อนรหัสบุคคล RamaID ของคุณเพื่อใช้งานระบบ</p>
-    <input type="text" id="bindRamaId" placeholder="RamaID 6 หลัก" inputmode="numeric" pattern="[0-9]*">
-    <br>
-    <button onclick="bindAccount()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin-top: 10px;">ลงทะเบียน</button>
+  <div id="loginBox" class="register-section">
+    <h3>เข้าสู่ระบบ MedRama</h3>
+    <input type="number" id="ramaidInput" placeholder="กรอก RamaID ของคุณ" inputmode="numeric" pattern="[0-9]*">
+    <button onclick="bindAccount()" id="loginBtn" style="width: 100%; background: #2ecc71; color: white; padding: 12px; border: none; border-radius: 5px; font-weight: bold; font-size: 16px; cursor: pointer;">เข้าสู่ระบบ / ผูกบัญชี</button>
+    
+    <p style="text-align: center; margin-top: 15px; font-size: 14px; color: #7f8c8d;">
+      เปลี่ยนเครื่องหรือเข้าไม่ได้? <a href="#" onclick="toggleResetForm()" style="color: #e74c3c; text-decoration: underline;">Reset LINE</a>
+    </p>
   </div>
 
-<div id="main-app">
+  <div id="resetBox" class="register-section" style="border-top: 4px solid #e74c3c;">
+    <h3 style="color: #e74c3c;">กู้คืน / Reset บัญชี LINE</h3>
+    <p style="font-size: 13px; color: #555; text-align: left;">ระบบจะส่งลิงก์ยืนยันไปที่อีเมลที่ลงทะเบียนไว้ (ลิงก์มีอายุ 15 นาที)</p>
+    <input type="number" id="resetRamaidInput" placeholder="กรอก RamaID ของคุณ" inputmode="numeric" pattern="[0-9]*">
+    <input type="email" id="resetEmailInput" placeholder="กรอก Email ที่ลงทะเบียนไว้">
+    <button onclick="sendResetRequest()" id="resetBtn" style="width: 100%; background: #e74c3c; color: white; padding: 12px; border: none; border-radius: 5px; font-weight: bold; font-size: 16px; cursor: pointer;">ส่งลิงก์ไปที่อีเมล</button>
     
+    <button onclick="toggleResetForm()" style="width: 100%; background: #bdc3c7; color: #2c3e50; padding: 12px; border: none; border-radius: 5px; margin-top: 10px; font-size: 16px; cursor: pointer;">ยกเลิก / กลับไปหน้า Login</button>
+  </div>
+
+  <div id="main-app">
     <div id="dashboard-link" style="display:none; margin-bottom: 20px;">
       <a href="dashboard.html" style="background: #2c3e50; color: white; padding: 10px 15px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">📊 ไปหน้า Dashboard ภาพรวม</a>
     </div>
@@ -60,12 +75,11 @@
 
     <h3 id="result-title" style="color: #2c3e50; border-bottom: 2px solid #ddd; padding-bottom: 5px; display: none;">แฟ้มผลงาน</h3>
     <div id="results">กำลังดึงข้อมูล...</div>
-
   </div>
 
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbxdJAxRXjYlXH5eTg5LSqRikiAkGRGbg_MQEMNNJFlhHuHRJwZYb5KPopYMIvcSj5I/exec";
-    const LIFF_ID = "2009954997-QO2Hj0Lv"; // 🔴 เอา LIFF ID จาก LINE Developers มาใส่
+    const LIFF_ID = "2009954997-QO2Hj0Lv";
     
     let lineProfile = null;
 
@@ -90,34 +104,90 @@
       document.getElementById('loading').style.display = 'none';
 
       if (data.found) {
-        // ส่ง ramaid เข้าไปด้วย
-        showApp(data.name, data.role, data.group, data.ramaid, data.personalLink); // เพิ่มพารามิเตอร์ที่ 5
+        showApp(data.name, data.role, data.group, data.ramaid, data.personalLink);
       } else {
-        document.getElementById('registerBox').style.display = 'block';
+        document.getElementById('loginBox').style.display = 'block';
       }
     }
 
-    async function bindAccount() {
-      const ramaid = document.getElementById('bindRamaId').value;
-      if(!ramaid) return alert('กรุณาป้อน RamaID');
-
-      document.getElementById('registerBox').innerHTML = "กำลังผูกบัญชี...";
-      
-      const response = await fetch(`${API_URL}?action=registerLine&uid=${lineProfile.userId}&displayName=${lineProfile.displayName}&ramaid=${ramaid}`);
-      const data = await response.json();
-
-      if (data.success) {
-        document.getElementById('registerBox').style.display = 'none';
-        // ส่ง ramaid ที่ได้กลับมาเข้าไปด้วย
-        showApp(data.name, data.role, data.group, data.ramaid, data.personalLink); // เพิ่มพารามิเตอร์ที่ 5
+    // --- ฟังก์ชันเปิดปิดกล่อง Reset ---
+    function toggleResetForm() {
+      const loginBox = document.getElementById('loginBox');
+      const resetBox = document.getElementById('resetBox');
+      if (loginBox.style.display === 'none') {
+        loginBox.style.display = 'block';
+        resetBox.style.display = 'none';
       } else {
-        alert(data.message);
-        location.reload();
+        loginBox.style.display = 'none';
+        resetBox.style.display = 'block';
+      }
+    }
+
+    // --- ฟังก์ชันผูกบัญชี (Login) แบบตรวจสอบเครื่อง ---
+    async function bindAccount() {
+      const ramaid = document.getElementById('ramaidInput').value;
+      if (!ramaid) {
+        return Swal.fire('แจ้งเตือน', 'กรุณากรอก RamaID', 'warning');
+      }
+
+      const loginBtn = document.getElementById('loginBtn');
+      loginBtn.innerText = "กำลังเข้าสู่ระบบ...";
+      loginBtn.disabled = true;
+      
+      try {
+        const response = await fetch(`${API_URL}?action=bindLine&ramaid=${ramaid}&uid=${lineProfile.userId}&displayName=${lineProfile.displayName}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          document.getElementById('loginBox').style.display = 'none';
+          showApp(data.name, data.role, data.group, data.ramaid, data.personalLink);
+        } else {
+          Swal.fire('ไม่สามารถเข้าสู่ระบบได้', data.message, 'error');
+        }
+      } catch (error) {
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่อีกครั้ง', 'error');
+      } finally {
+        loginBtn.innerText = "เข้าสู่ระบบ / ผูกบัญชี";
+        loginBtn.disabled = false;
+      }
+    }
+
+    // --- ฟังก์ชันขอ Reset บัญชีผ่าน Email ---
+    async function sendResetRequest() {
+      const ramaid = document.getElementById('resetRamaidInput').value;
+      const email = document.getElementById('resetEmailInput').value;
+      const btn = document.getElementById('resetBtn');
+
+      if (!ramaid || !email) {
+        return Swal.fire('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+      }
+
+      btn.innerText = "กำลังส่งข้อมูล...";
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`${API_URL}?action=requestReset&ramaid=${ramaid}&email=${email}`);
+        const data = await response.json();
+
+        if (data.success) {
+          Swal.fire('สำเร็จ', data.message, 'success').then(() => {
+            toggleResetForm(); // กลับไปหน้า Login หลังส่งเสร็จ
+            document.getElementById('resetRamaidInput').value = '';
+            document.getElementById('resetEmailInput').value = '';
+          });
+        } else {
+          Swal.fire('ข้อผิดพลาด', data.message, 'error');
+        }
+      } catch (error) {
+        Swal.fire('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการส่งข้อมูลไปยังเซิร์ฟเวอร์', 'error');
+      } finally {
+        btn.innerText = "ส่งลิงก์ไปที่อีเมล";
+        btn.disabled = false;
       }
     }
 
     // ฟังก์ชันโชว์โปรไฟล์ และแยกการทำงานตาม Group / Role
-function showApp(realName, role, group, ramaid, personalLink) {
+    function showApp(realName, role, group, ramaid, personalLink) {
       document.getElementById('profileBox').style.display = 'block';
       document.getElementById('linePic').src = lineProfile.pictureUrl;
       document.getElementById('lineName').innerText = lineProfile.displayName;
@@ -125,14 +195,12 @@ function showApp(realName, role, group, ramaid, personalLink) {
       let groupText = group ? ` (หน่วย: ${group})` : '';
       document.getElementById('realName').innerText = realName + groupText;
 
-      // 🔴 ปรับการเช็ค Resident ให้ครอบคลุม (เช่น Resident 1, resident med)
       const groupStr = group ? group.toString().trim().toLowerCase() : '';
       const isResident = groupStr.includes('resident'); 
       const isAdmin = role && role.toString().trim().toLowerCase() === 'admin';
 
       document.getElementById('main-app').style.display = 'block';
-
-      // โชว์ปุ่ม Dashboard เฉพาะ Admin
+      
       if (isAdmin) {
         document.getElementById('dashboard-link').style.display = 'block';
       }
@@ -140,10 +208,9 @@ function showApp(realName, role, group, ramaid, personalLink) {
       const resultTitle = document.getElementById('result-title');
       const resultsDiv = document.getElementById('results');
       const linkDiv = document.getElementById('personalLinkDiv');
-
-      // แยกการทำงานให้ชัดเจน
+      
       if (isResident) {
-        // 👨‍⚕️ ส่วนของนักเรียน (Resident)
+        // ส่วนของนักเรียน (Resident)
         if (lineProfile && lineProfile.userId) {
           linkDiv.innerHTML = `<a href="viewer.html?uid=${lineProfile.userId}" target="_blank" style="background:#8e44ad; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; display:inline-block;">📁 เปิดแฟ้มประจำตัว (Read-only)</a>`;
           linkDiv.style.display = 'block';
@@ -153,15 +220,14 @@ function showApp(realName, role, group, ramaid, personalLink) {
         
         resultTitle.innerText = "แฟ้มผลงานของคุณ";
         resultTitle.style.display = 'block';
-        fetchMyData(ramaid); // ดึงรายการ 6 ชีตของตัวเอง
+        fetchMyData(ramaid); 
 
       } else {
-        // 👨‍🏫 ส่วนของ Staff (ผู้ที่ไม่ใช่ Resident)
-        linkDiv.style.display = 'none'; // ซ่อนปุ่มแฟ้มส่วนตัว
-        
+        // ส่วนของ Staff
+        linkDiv.style.display = 'none';
         resultTitle.innerText = "รายชื่อแพทย์ประจำบ้านในความดูแลของคุณ";
         resultTitle.style.display = 'block';
-        fetchStaffStudents(ramaid); // ดึงรายชื่อจากชีต consult
+        fetchStaffStudents(ramaid); 
       }
     }
     
@@ -173,7 +239,6 @@ function showApp(realName, role, group, ramaid, personalLink) {
         const response = await fetch(`${API_URL}?action=staffStudentList&staffId=${staffId}`);
         const data = await response.json();
         
-        // ถ้า Backend ตอบกลับมาเป็น Error (เช่น ลืม Deploy)
         if (data.error) {
           resultsDiv.innerHTML = `<div style="text-align:center; color:#e74c3c;">แจ้งเตือนระบบ: ${data.error}</div>`;
           return;
@@ -195,39 +260,33 @@ function showApp(realName, role, group, ramaid, personalLink) {
           resultsDiv.appendChild(div);
         });
       } catch (e) {
-        // จับ Error กรณี Network ล่ม หรือได้ผลลัพธ์ไม่ใช่ JSON
         resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบการ Deploy API</div>';
         console.error("Fetch Error: ", e);
       }
     }
     
-    // ฟังก์ชันใหม่: ดึงรายชื่อนักเรียนมาทำเป็นปุ่มให้ Staff กด
     async function fetchStudentList() {
       const container = document.getElementById('student-list-container');
       try {
         const response = await fetch(`${API_URL}?action=listStudents`);
         const data = await response.json();
-        
         container.innerHTML = '';
         if (data.length === 0) {
           container.innerHTML = '<div style="color:#e74c3c;">ไม่พบรายชื่อนักเรียนในระบบ</div>';
           return;
         }
 
-        // สร้างปุ่มกดสำหรับนักเรียนแต่ละคน
         data.forEach(student => {
           const btn = document.createElement('button');
           btn.style = "display: block; width: 100%; max-width: 300px; margin: 10px auto; padding: 12px; background: #3498db; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);";
           btn.innerText = `👨‍⚕️ ${student.name} (${student.ramaid})`;
           
-          // เมื่อกดปุ่มชื่อนักเรียน ให้ไปโหลดแฟ้มของนักเรียนคนนั้น
           btn.onclick = () => {
              document.getElementById('result-title').innerText = `แฟ้มผลงานของ: ${student.name}`;
              document.getElementById('result-title').style.display = 'block';
              document.getElementById('results').innerHTML = '<div style="text-align:center; color:#7f8c8d;">กำลังดึงข้อมูล...</div>';
              fetchMyData(student.ramaid);
           };
-          
           container.appendChild(btn);
         });
       } catch (e) {
@@ -235,59 +294,56 @@ function showApp(realName, role, group, ramaid, personalLink) {
       }
     }
     
-    // ฟังก์ชันดึงข้อมูลจากชีต consult ตาม ramaid ของตัวเอง
-async function fetchMyData(ramaid) {
-  const resultsDiv = document.getElementById('results');
-  
-  try {
-    const response = await fetch(`${API_URL}?action=search&id=${ramaid}`);
-    const data = await response.json(); // ข้อมูลจะเป็น { "ชีตที่1": [...], "ชีตที่2": [...] }
-    
-    resultsDiv.innerHTML = '';
-
-    // ตรวจสอบว่ามีข้อมูลส่งกลับมาหรือไม่
-    if (Object.keys(data).length === 0) {
-      resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">ไม่พบข้อมูลของคุณในระบบ</div>';
-      return;
+    async function fetchMyData(ramaid) {
+      const resultsDiv = document.getElementById('results');
+      try {
+        const response = await fetch(`${API_URL}?action=search&id=${ramaid}`);
+        const data = await response.json();
+        
+        resultsDiv.innerHTML = '';
+        if (Object.keys(data).length === 0) {
+          resultsDiv.innerHTML = '<div style="text-align:center; color:#e74c3c;">ไม่พบข้อมูลของคุณในระบบ</div>';
+          return;
+        }
+        
+        for (const sheetName in data) {
+          const header = document.createElement('h4');
+          header.innerText = `📂 ${sheetName}`;
+          header.style.color = "#2c3e50";
+          header.style.marginTop = "20px";
+          resultsDiv.appendChild(header);
+          
+          data[sheetName].forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'result-item';
+            div.innerHTML = `
+              <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
+              <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
+            `;
+            resultsDiv.appendChild(div);
+          });
+        }
+      } catch (error) {
+        resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
+      }
     }
     
-    // วนลูปตามชื่อชีต
-    for (const sheetName in data) {
-      // สร้างหัวข้อชื่อชีต
-      const header = document.createElement('h4');
-      header.innerText = `📂 ${sheetName}`;
-      header.style.color = "#2c3e50";
-      header.style.marginTop = "20px";
-      resultsDiv.appendChild(header);
-
-      // สร้างรายการลิงก์ในชีตนั้นๆ
-      data[sheetName].forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'result-item';
-        div.innerHTML = `
-          <a href="${item.link}" class="result-link" target="_blank">🔗 ${item.text}</a>
-          <div style="color: #7f8c8d; font-size: 14px;">ปีการศึกษา: ${item.year}</div>
-        `;
-        resultsDiv.appendChild(div);
-      });
-    }
-  } catch (error) {
-    resultsDiv.innerHTML = 'เกิดข้อผิดพลาดในการโหลดข้อมูล';
-  }
-}
-    
-
-    // ฟังก์ชันออกจากระบบ
     function logout() {
       if (liff.isLoggedIn()) {
         liff.logout();
       }
-      location.reload(); // รีเฟรชหน้าเว็บเพื่อให้เด้งกลับไปหน้าล็อกอิน
+      location.reload(); 
     }
 
-    const bindInput = document.getElementById('bindRamaId');
-    if(bindInput) {
-      bindInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
+    // จำกัดการกรอกเฉพาะตัวเลขสำหรับช่อง RamaID ทั้งสองจุด
+    const ramaidInput = document.getElementById('ramaidInput');
+    if(ramaidInput) {
+      ramaidInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
+    }
+    
+    const resetRamaidInput = document.getElementById('resetRamaidInput');
+    if(resetRamaidInput) {
+      resetRamaidInput.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });
     }
 
     window.onload = () => { initLiff(); };
